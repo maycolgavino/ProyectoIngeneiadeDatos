@@ -4,8 +4,8 @@ from datetime import datetime, timedelta
 import pandas as pd
 from faker import Faker
 
-# Configurar Faker
-fake = Faker('es_PE')
+# Configurar Faker (Usamos es_ES o es_MX ya que 'es_PE' no siempre está disponible en Faker)
+fake = Faker('es_ES')
 
 # Parámetros del proyecto
 START_DATE = datetime(2023, 1, 1)
@@ -126,25 +126,50 @@ def generar_ventas(df_maderas, df_clientes):
                  
         cliente_id = random.choice(df_clientes['id_cliente'].tolist())
         
+        # Simulamos 50-60 días súper rentables al año (probabilidad del ~15%) que rompen el tope de 30k y 200 items
+        es_dia_bueno = random.random() < 0.15
+        limite_presupuesto = 150000 if es_dia_bueno else 29999
+        limite_cantidad_item = 800 if es_dia_bueno else 200
+        
         num_items_en_venta = random.randint(1, 8) # Entre 1 y 8 líneas de detalle por venta
         venta_total_monto = 0
         
         for _ in range(num_items_en_venta):
             madera = df_maderas.sample(1).iloc[0]
-            cantidad = random.randint(10, 500) # Cuantas piezas compra
             
-            # Precio al que realmente se vende (puede tener descuento si compra mucho o inflación por año)
-            inflacion = 1.0 + ((random_day.year - 2023) * 0.05) # 5% más caro cada año
-            descuento = random.uniform(0.9, 1.0) if cantidad > 100 else 1.0
+            # Calculamos la inflación y precios base
+            inflacion = 1.0 + ((random_day.year - 2023) * random.uniform(0.05, 0.08)) # 5% a 8% más caro cada año
+            precio_unit_base = madera['precio_pt_referencial'] * inflacion
             
-            precio_unit_aplicado = madera['precio_pt_referencial'] * inflacion * descuento
+            # Límite para que la venta total no sobrepase el presupuesto establecido
+            precio_base_por_pieza = madera['pies_cuadrados'] * precio_unit_base
+            presupuesto_sobrante = limite_presupuesto - venta_total_monto
+            if presupuesto_sobrante <= 0:
+                break
+                
+            max_posible_por_presupuesto = int(presupuesto_sobrante // precio_base_por_pieza)
+            if max_posible_por_presupuesto < 1:
+                break
+                
+            cantidad = random.randint(1, min(limite_cantidad_item, max_posible_por_presupuesto))
+            
+            # Ajustamos la regla del descuento para cantidades >= 50 ya que el tope bajó a 200
+            descuento_porcentual = random.uniform(0.01, 0.12) if cantidad >= 50 else 0.0
+            descuento_factor = 1.0 - descuento_porcentual
+            
+            precio_unit_aplicado = precio_unit_base * descuento_factor
+            
+            # Cálculos de línea
             subtotal = madera['pies_cuadrados'] * cantidad * precio_unit_aplicado
             
             detalles.append({
                 'id_detalle': id_detalle_counter,
                 'id_venta': f"V-{str(id_venta_counter).zfill(6)}",
                 'id_madera': madera['id_madera'],
+                'descripcion_snapshot': madera['descripcion'],
                 'cantidad_piezas': cantidad,
+                'precio_pt_base': round(precio_unit_base, 2),
+                'descuento_pct': round(descuento_porcentual * 100, 2),
                 'precio_pt_aplicado': round(precio_unit_aplicado, 2),
                 'subtotal': round(subtotal, 2)
             })

@@ -1,28 +1,53 @@
-# Proyecto Maderera Perú - Data Engineering Pipeline
+# Proyecto Maderera Perú - Data Pipeline End-to-End (Arquitectura Medallón)
 
-Este proyecto simula un pipeline de datos transaccionales para una empresa maderera en Perú, utilizando la Arquitectura Medallón (Bronze, Silver, Gold). Su objetivo principal es proveer data volumétrica (+100k registros entre 2023 y 2025) para la creación de reportes gerenciales tácticos enfocados en proyecciones y estrategias de Marketing (estacionalidad y tendencias de consumo por especies).
+Este repositorio aloja un Pipeline Analítico Avanzado para una maderera peruana. El pipeline ejecuta de principio a fin las 3 capas del modelo Medallón: Simulando transacciones (Bronze), Asegurando la Integridad y Calidad de la data (Silver) y Produciendo reportes de Rentabilidad y Marketing agrupados (Gold).
 
-## Estructura
+## 🗂️ Arquitectura del Pipeline y Estructura
 
-El pipeline se divide en scripts para estructurar el datalake:
+El repositorio se divide estratégicamente así:
 
-*   `generador_bronze.py`: Ingesta/Simulación. Genera las tablas maestras (Maderas, Clientes) y los hechos transaccionales (Ventas y Detalles) guardándolos en `data/bronze/` en formato CSV. Utiliza `Faker` para simular empresas y distribución geográfica en Perú.
+*   **1. `generador_bronze.py`**: Motor Raw. Simula +100k registros (2023-2025) bajo reglas estrictas de mercado (Inflación, anomalías estacionales). Guarda en `data/bronze/`.
+*   **2. `procesador_silver.py`**: Limpieza Orientada a Objetos. Estandariza strings, realiza el *Mega Join* de tickets, inyecta Feature Engineering (Mes, Año, Q) exportando a `data/silver/` (`.parquet`).
+*   **3. `procesador_gold.py`**: Datamarts finales. Crea tablas dinámicas maestras listas para Dashboards (Rentabilidad Global y Estrategia Promocional Automática) en `data/gold/`.
+*   **▶️ `main_pipeline.py`**: El Orquestador. Dispara secuencialmente y de forma aislada las 3 capas anteriores.
+*   **📚 `/docs`**: Justificaciones técnicas, diagramas dictados, diccionario de datos y modelos matemáticos.
+*   **🐳 `/ops`**: Contiene el `Dockerfile` optimizado.
+*   **🤖 `/.github/workflows`**: Tuberías CI/CD para ejecutar el contenedor *Serverless* en diferentes Proveedores de Nube.
 
-## Requisitos
+## 🚀 Guía de Deploy Multicloud (Cómo Instalarlo en la Nube)
 
-*   Python 3.8+
-*   Pandas
-*   Faker
+El proyecto viene Dockerizado y amarrado a **GitHub Actions**, listo para compilarse y ejecutarse automáticamente como un `Batch Job`. Dependiendo de tu Cloud Platform favorito, activa su workflow:
 
-## Instalación
+> **NOTA DE VOLUMEN:** Localmente, la memoria va a la carpeta `data/`. Para uso real de Big Data en la nube, el sistema asume que montarás Buckets/Blob Storage hacia esa misma ruta dentro del contenedor.
 
-1.  Crear entorno virtual: `python -m venv venv`
-2.  Activar entorno virtual: `.\venv\Scripts\activate` (Windows)
-3.  Instalar dependencias: `pip install -r requirements.txt`
+### 🟣 AMAZON WEB SERVICES (AWS ECS Fargate)
+1. En GitHub, ve a `Settings > Secrets` y configura: `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `SUBNET_ID`, `SG_ID`.
+2. Dirígete a la pestaña **Actions** en Github, selecciona `Deploy to AWS ECS` y dale *Run workflow*.
+3. GitHub compilará el código, subirá la imagen al registry (ECR) y ejecutará nuestro `main_pipeline.py` de forma paralela en un contenedor *Fargate* que se apagará al terminar (ahorrando dinero).
 
-## Ejecución
+### 🟡 GOOGLE CLOUD PLATFORM (Cloud Run Jobs)
+1. En GitHub Secrets, configura `GCP_PROJECT_ID` y `GCP_CREDENTIALS` (Service Account Key).
+2. Dirígete a la pestaña **Actions** y ejecuta el workflow `Deploy to Google Cloud Run Jobs`.
+3. Tu pipeline se empujará al Artifact Registry y se orquestará usando *Cloud Run Jobs* de Google, capaz de manejar hasta 60 minutos de procesamiento ETL puro.
 
-1.  Para generar la capa Raw (Bronze):
-    ```bash
-    python generador_bronze.py
-    ```
+### 🔵 MICROSOFT AZURE (Container Instances)
+1. En GitHub Secrets, inyecta: `AZURE_CREDENTIALS`, `ACR_USERNAME`, `ACR_PASSWORD`.
+2. Lanza el workflow `Deploy to Azure Container Instances`.
+3. Desplegará como un ACI de política *Restart-Never*, ideal para trabajos temporales de Data Quality.
+
+## 🛠️ Guía de Ejecución Local Inmediata
+
+Si quieres correr todo en tu computadora:
+
+```bash
+# 1. Crear entorno y activarlo
+python -m venv venv
+.\venv\Scripts\activate   # Windows
+
+# 2. Instalar el cerebro
+pip install --upgrade pip setuptools wheel
+pip install -r requirements.txt
+
+# 3. LANZAR LA MAGIA EN UN SOLO CLIC! (Bronze->Silver->Gold)
+python main_pipeline.py
+```

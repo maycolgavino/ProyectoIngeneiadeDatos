@@ -1,0 +1,51 @@
+name: Deploy to Azure Container Instances
+
+on:
+  workflow_dispatch:
+
+env:
+  ACR_NAME: madereraregistry
+  RESOURCE_GROUP: maderera-data-rg
+  CONTAINER_INFO: maderera-generador-bronze
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Login en Azure
+        uses: azure/login@v1
+        with:
+          creds: $\{{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Login a Azure Container Registry
+        uses: azure/docker-login@v1
+        with:
+          login-server: $\{{ env.ACR_NAME }}.azurecr.io
+          username: $\{{ secrets.ACR_USERNAME }}
+          password: $\{{ secrets.ACR_PASSWORD }}
+
+      - name: Construir y Subir imagen Docker
+        run: |
+          IMAGE_TAG=$\{{ env.ACR_NAME }}.azurecr.io/$\{{ env.CONTAINER_INFO }}:$\{{ github.sha }}
+          docker build -f ops/Dockerfile -t $IMAGE_TAG .
+          docker push $IMAGE_TAG
+          echo "IMAGE=$IMAGE_TAG" >> $GITHUB_ENV
+
+      - name: Desplegar en Azure Container Instance (Serverless Batch)
+        uses: azure/aci-deploy@v1
+        with:
+          resource-group: $\{{ env.RESOURCE_GROUP }}
+          dns-name-label: maderera-bronze-batch
+          image: $\{{ env.IMAGE }}
+          registry-login-server: $\{{ env.ACR_NAME }}.azurecr.io
+          registry-username: $\{{ secrets.ACR_USERNAME }}
+          registry-password: $\{{ secrets.ACR_PASSWORD }}
+          name: maderera-bronze-job
+          location: eastus
+          # Para tareas que terminan, Azure permite establecer RestartPolicy OnFailure o Never
+          restart-policy: Never
+          environment-variables: >-
+            STORAGE_TYPE=azure

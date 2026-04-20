@@ -1,0 +1,50 @@
+name: Deploy to Google Cloud Run Jobs
+
+on:
+  workflow_dispatch: # Permite lanzarlo manualmente
+
+env:
+  PROJECT_ID: $\{{ secrets.GCP_PROJECT_ID }}
+  REGION: us-central1
+  REPOSITORY: maderera-repo
+  IMAGE_NAME: generador-bronze
+  JOB_NAME: maderera-generador-bronze
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Autenticación en Google Cloud
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: '$\{{ secrets.GCP_CREDENTIALS }}'
+
+      - name: Configurar Docker de Artifact Registry
+        run: |-
+          gcloud auth configure-docker $\{{ env.REGION }}-docker.pkg.dev
+
+      - name: Construir y Subir Imagen Docker
+        run: |
+          IMAGE_PATH="$\{{ env.REGION }}-docker.pkg.dev/$\{{ env.PROJECT_ID }}/$\{{ env.REPOSITORY }}/$\{{ env.IMAGE_NAME }}:$\{{ github.sha }}"
+          docker build -f ops/Dockerfile -t $IMAGE_PATH .
+          docker push $IMAGE_PATH
+          
+          # Mantener la variable env
+          echo "IMAGE=$IMAGE_PATH" >> $GITHUB_ENV
+
+      - name: Desplegar Cloud Run Job
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          job: $\{{ env.JOB_NAME }}
+          region: $\{{ env.REGION }}
+          image: $\{{ env.IMAGE }}
+          # Configuración del Job para Batching Data
+          flags: >-
+            --tasks=1
+            --max-retries=0
+            --task-timeout=15m
+            --memory=1024Mi
