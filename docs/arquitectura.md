@@ -6,37 +6,37 @@ Este documento describe la arquitectura técnica del pipeline de datos construid
 
 ```mermaid
 graph TD
-    subgraph Orquestador Principal
+    subgraph Orquestador ["Orquestador Principal"]
         main[main_pipeline.py]
     end
 
-    subgraph Capa Bronze: Ingesta & Raw Data
-        db_raw[(Fuentes Raw\nCSV / JSON)]
+    subgraph Bronze ["Capa Bronze: Ingesta y Raw Data"]
+        db_raw[("Fuentes Raw<br>CSV / JSON")]
         script_b[generador_bronze.py]
-        main -->|Inicia Phase 1| script_b
+        main -->|"Inicia Phase 1"| script_b
         script_b --> db_raw
     end
 
-    subgraph Capa Silver: Limpieza & Join (SSOT)
-        db_silver[(Silver Data\nParquet Optimizado)]
-        script_s[procesador_silver.py\ntransformers.py]
-        db_raw -->|Extracción| script_s
-        main -->|Inicia Phase 2| script_s
-        script_s -->|Limpieza y Tipado| db_silver
+    subgraph Silver ["Capa Silver: Limpieza y Join"]
+        db_silver[("Silver Data<br>Parquet Optimizado")]
+        script_s["procesador_silver.py<br>transformers.py"]
+        db_raw -->|"Extracción"| script_s
+        main -->|"Inicia Phase 2"| script_s
+        script_s -->|"Limpieza y Tipado"| db_silver
     end
 
-    subgraph Capa Gold: Datamarts Analíticos
-        dm_rent[DM Rentabilidad\nrentabilidad.csv]
-        dm_promo[DM Promociones\nestrategia_promociones.csv]
+    subgraph Gold ["Capa Gold: Datamarts Analíticos"]
+        dm_rent["DM Rentabilidad<br>rentabilidad.csv"]
+        dm_promo["DM Promociones<br>estrategia_promociones.csv"]
         script_g[procesador_gold.py]
-        db_silver -->|Lectura SSOT| script_g
-        main -->|Inicia Phase 3| script_g
-        script_g -->|Agregación de Negocio| dm_rent
-        script_g -->|Segmentación| dm_promo
+        db_silver -->|"Lectura SSOT"| script_g
+        main -->|"Inicia Phase 3"| script_g
+        script_g -->|"Agregación de Negocio"| dm_rent
+        script_g -->|"Segmentación"| dm_promo
     end
 
-    subgraph CI/CD & Despliegue
-        gh[GitHub Actions\nworkflows / Docker]
+    subgraph CICD ["CI/CD y Despliegue"]
+        gh["GitHub Actions<br>workflows / Docker"]
         dm_rent -.-> gh
         dm_promo -.-> gh
     end
