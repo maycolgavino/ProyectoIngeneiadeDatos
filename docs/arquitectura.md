@@ -1,32 +1,80 @@
-# Arquitectura del Pipeline de Datos (Medallón)
+# Arquitectura del Pipeline de Datos (Proyecto Maderera)
 
-Este proyecto aplica los principios de la **Arquitectura Medallón** (Medallion Architecture), diseñado para proveer simulaciones robustas enfocadas a analítica de Marketing y Ventas en el sector maderero.
+Este documento describe la arquitectura técnica del pipeline de datos construido para la empresa maderera. El sistema está diseñado bajo el patrón **Medallion Architecture**, garantizando trazabilidad, escalabilidad y calidad de los datos generados.
 
-## 1. Visión General del Pipeline
+## 1. Diagrama de Arquitectura de Alto Nivel
 
-El pipeline actual abarca la **Ingesta de Datos** (Capa Bronze). Está programado en **Python**, diseñado localmente interactuando con procesos `Batch`, y es escalable a la nube mediante Contenedores (Docker) disparados por cron-jobs en Serverless (ECS Fargate/Cloud Run Jobs).
+```mermaid
+graph TD
+    subgraph Orquestador Principal
+        main[main_pipeline.py]
+    end
 
-## 2. Capa Bronze (Raw Data)
+    subgraph Capa Bronze: Ingesta & Raw Data
+        db_raw[(Fuentes Raw\nCSV / JSON)]
+        script_b[generador_bronze.py]
+        main -->|Inicia Phase 1| script_b
+        script_b --> db_raw
+    end
 
-El script `generador_bronze.py` funge como los sistemas de origen transaccional (ERP) de la empresa maderera. 
+    subgraph Capa Silver: Limpieza & Join (SSOT)
+        db_silver[(Silver Data\nParquet Optimizado)]
+        script_s[procesador_silver.py\ntransformers.py]
+        db_raw -->|Extracción| script_s
+        main -->|Inicia Phase 2| script_s
+        script_s -->|Limpieza y Tipado| db_silver
+    end
 
-### Lógica Comercial y Reglas Aleatorias
-*   **Volumen:** Genera más de 100,000 registros transaccionales (Detalles de Venta).
-*   **Temporalidad:** Base histórica desde Enero 2023 hasta finales de 2025.
-*   **Límites Estándar:** 
-    * El máximo de compra por línea de detalle es de **200 piezas**.
-    * La venta total máxima permitida diaria/por cliente estándar es tapada algorítmicamente a **$30,000**.
-*   **Anomalías de Marketing ('Días Buenos'):** Existe una probabilidad calculada constante de `~15%` de que un día explote comercialmente (representando el Black Friday, Remates, etc.). En estos escenarios los límites se eluden, levantando la cantidad a 800 ítems y topes de facturación de hasta $150,000.
-*   **Fluctuación de Precios:** Todos los cortes de madera incrementan su precio anual basado en una inflación pseudo-aleatoria de entre `5% a 8%` anual con respecto a la base del 2023.
-*   **Estrategia de Descuentos:** Compras al por mayor (>50 unidades) disparan promociones aleatorias de `1% al 12% off`.
+    subgraph Capa Gold: Datamarts Analíticos
+        dm_rent[DM Rentabilidad\nrentabilidad.csv]
+        dm_promo[DM Promociones\nestrategia_promociones.csv]
+        script_g[procesador_gold.py]
+        db_silver -->|Lectura SSOT| script_g
+        main -->|Inicia Phase 3| script_g
+        script_g -->|Agregación de Negocio| dm_rent
+        script_g -->|Segmentación| dm_promo
+    end
 
-## 3. Despliegue Multi-Cloud (CI/CD)
+    subgraph CI/CD & Despliegue
+        gh[GitHub Actions\nworkflows / Docker]
+        dm_rent -.-> gh
+        dm_promo -.-> gh
+    end
 
-El proyecto incluye directrices para Integración y Despliegue continuo hacia las nubes líderes:
+    style main fill:#f9f,stroke:#333,stroke-width:2px
+    style db_raw fill:#cd7f32,stroke:#333
+    style db_silver fill:#c0c0c0,stroke:#333
+    style dm_rent fill:#ffd700,stroke:#333
+    style dm_promo fill:#ffd700,stroke:#333
+```
 
-Dado que este generador produce archivos robustos (`CSV`), al llevar la arquitectura a la nube estos deberán alojarse en **Data Lakes** como:
-*   AWS: **S3 (Simple Storage Service)**
-*   GCP: **GCS (Google Cloud Storage)**
-*   Azure: **Blob Storage**
+## 2. Descripción de Componentes
 
-El aprovisionamiento del código hacia estos entornos se hace empaquetando todo en un contenedor `Docker` a través de **GitHub Actions**.
+### 2.1 Orquestación (`main_pipeline.py`)
+Es el punto de entrada principal del sistema. En lugar de ejecutar scripts sueltos, este script maestro coordina secuencialmente la ejecución de las tres capas. Provee instrumentación (tiempo de ejecución de cada paso) y registra el paso de la data a través de las tuberías.
+
+### 2.2 Capa Bronze (Datos Crudos)
+- **Propósito:** Actuar como el lago de datos crudo temporal donde la información de origen aterriza tal cual como se generó.
+- **Entidades procesadas:** Catálogo de maderas, registro de clientes, historial de ventas y sus detalles.
+- **Mecanismo:** El script `generador_bronze.py` simula/recibe la ingesta inicial guardando los datos sin alteraciones para mantener la trazabilidad.
+
+### 2.3 Capa Silver (Single Source of Truth)
+- **Propósito:** Limpiar, homologar y consolidar la información. 
+- **Mecanismo:** Mediante programación orientada a objetos en `transformers.py` y el controlador `procesador_silver.py`, la data sufre transformaciones severas:
+  - Eliminación de registros vacíos (*null handling*).
+  - Normalización de tipos de datos (fechas reales y montos numéricos).
+  - Unión inteligente (Joins) creando una base transaccional maestra.
+- **Almacenamiento:** Lo ideal en esta capa es trabajar con formato Parquet para la eficiencia de I/O de lectura/escritura en los siguientes pasos.
+
+### 2.4 Capa Gold (Capa de Negocio)
+- **Propósito:** Responder inmediatamente a las preguntas críticas de la gerencia sin que BI tenga que recostruir los datos.
+- **Mecanismo:** `procesador_gold.py` se encarga de tomar la verdad absoluta de *Silver* y calcular métricas derivadas (sumatorias, KPIs, segmentación).
+- **Entregables (Datamarts):**
+  - `rentabilidad.csv`: Cruce de datos que revela las ganancias puras por tipo de madera vendida.
+  - `estrategia_promociones.csv`: Listado de comportamientos de clientes y recomendador de promociones.
+
+## 3. Estrategia Cloud y Despliegue (CI/CD)
+
+El repositorio está equipado para entornos Multi-Cloud (AWS/GCP):
+- **Contenedores:** Soporte para empaquetado en imágenes Docker. Esto asegura que el pipeline se ejecuta igual en la computadora del desarrollador y en el servidor local.
+- **Automatización de CI/CD:** Mediante archivos en `.github/workflows/` (ej: `deploy-aws.yml`, `deploy-gcp.yml`), cualquier actualización a la rama *master* desencadena flujos que testean la integridad del pipeline y construyen una nueva versión lista para funcionar en la nube de Amazon Web Services (ECS/Batch) o Google Cloud Platform (Cloud Run/Compute Engine).
