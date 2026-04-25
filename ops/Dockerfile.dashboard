@@ -18,4 +18,4 @@ COPY . .
 EXPOSE 8501
 
 # Comando para ejecutar el dashboard
-CMD ["streamlit", "run", "dashboard.py", "--server.port=8501", "--server.address=0.0.0.0", "--server.enableCORS=false", "--server.enableXsrfProtection=false"]
+CMD ["streamlit", "run", "dashboard.py", "--server.port=8501", "--server.address=0.0.0.0", "--browser.serverAddress=bmxvbhjzpg.us-east-1.awsapprunner.com", "--browser.serverPort=443", "--server.enableCORS=false", "--server.enableXsrfProtection=false"]
