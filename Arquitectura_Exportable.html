@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Arquitectura Maderera - Antes vs Después</title>
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({ 
+            startOnLoad: true, 
+            theme: 'default',
+            flowchart: { curve: 'basis' }
+        });
+    </script>
+    <style>
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            text-align: center; 
+            margin: 40px; 
+            background-color: #f8f9fa;
+        }
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            display: inline-block;
+        }
+        h1 { color: #333; margin-bottom: 30px; }
+        .mermaid { 
+            display: flex; 
+            justify-content: center; 
+        }
+        @media print {
+            button, .no-print { display: none !important; }
+            body { background-color: white; margin: 0; }
+            .container { box-shadow: none; padding: 0; }
+        }
+        button { 
+            padding: 12px 24px; 
+            font-size: 18px; 
+            font-weight: bold;
+            cursor: pointer; 
+            background: #2ea44f; 
+            color: #fff; 
+            border: none; 
+            border-radius: 6px; 
+            margin-bottom: 20px; 
+            transition: background 0.3s;
+        }
+        button:hover { background: #22863a; }
+    </style>
+</head>
+<body>
+    <div class="no-print" style="margin-bottom: 20px;">
+        <button onclick="window.print()">📥 DESCARGAR COMO PDF</button>
+        <p style="color: #666; font-size: 14px;">(Asegúrate de seleccionar "Guardar como PDF" en la ventana de impresión y activar "Gráficos en segundo plano")</p>
+    </div>
+    
+    <div class="container">
+        <h1>Evolución de Arquitectura de Datos - Maderera Perú</h1>
+        <div class="mermaid">
+flowchart TD
+    %% Estilos
+    classDef antes fill:#ffe6e6,stroke:#cc0000,stroke-width:2px,color:#333;
+    classDef despues fill:#e6f9ec,stroke:#28a745,stroke-width:2px,color:#333;
+    classDef aws fill:#ff9900,color:black,stroke:#cc7a00,stroke-width:1px;
+    classDef db fill:#0052cc,color:white,stroke:#003d99,stroke-width:1px;
+    classDef stream fill:#ff4b4b,color:white,stroke:#cc0000,stroke-width:1px;
+    classDef process fill:#f9f9f9,stroke:#666,stroke-width:1px,color:#333;
+
+    subgraph "🔴 ESTADO ANTERIOR: Procesos Manuales y Desorganización"
+        direction LR
+        E1[Archivos Excel\ny Notas Físicas]:::antes --> M1[Consolidación\nManual]:::antes
+        M1 --> R1[Reportes Estáticos\nLentos y Propensos a Errores]:::antes
+        R1 --> D1[Toma de Decisiones\nReactiva y sin Visibilidad]:::antes
+    end
+
+    subgraph "🟢 ESTADO ACTUAL: Arquitectura Medallón End-to-End Cloud"
+        direction TB
+        
+        subgraph "1. Extracción (main_pipeline.py)"
+            Src[(Generador de\nTransacciones)]:::db
+        end
+        
+        subgraph "2. Procesamiento de Datos"
+            direction LR
+            Bz[(🥉 Capa Bronze\nDatos Crudos)]:::db
+            Sv[(🥈 Capa Silver\nLimpios y Enriquecidos)]:::db
+            Gd[(🥇 Capa Gold\nDatamarts)]:::db
+            
+            Bz -->|Limpieza y Feature\nEngineering Orientado a Objetos| Sv
+            Sv -->|Reglas de Negocio\ny Agrupaciones Analíticas| Gd
+        end
+        
+        Src -->|Ingesta Automatizada| Bz
+        
+        subgraph "3. Consumo y Visualización"
+            St[Dashboard interactivo en Streamlit\n(Rentabilidad y Promociones)]:::stream
+            Gd -->|Insights Estratégicos| St
+        end
+    end
+
+    subgraph "☁️ Infraestructura CI/CD y Nube"
+        direction LR
+        GH[GitHub Actions\nCI/CD Pipeline]:::process --> Nube[AWS ECS Fargate / GCP Cloud Run / Azure ACI]:::aws
+        Nube -.-> |Ejecución de\nContenedor Docker| Src
+    end
+
+    %% Separador visual
+    D1 ~~~ GH
+        </div>
+    </div>
+</body>
+</html>

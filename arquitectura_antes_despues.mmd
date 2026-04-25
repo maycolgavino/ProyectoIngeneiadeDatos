@@ -1,0 +1,49 @@
+flowchart TD
+    %% Estilos
+    classDef antes fill:#ffe6e6,stroke:#ff4d4d,stroke-width:2px,color:#333;
+    classDef despues fill:#e6f9ec,stroke:#28a745,stroke-width:2px,color:#333;
+    classDef aws fill:#ff9900,color:black,stroke:#333,stroke-width:1px;
+    classDef db fill:#0052cc,color:white,stroke:#003d99,stroke-width:1px;
+    classDef stream fill:#ff4b4b,color:white,stroke:#cc0000,stroke-width:1px;
+    classDef process fill:#f9f9f9,stroke:#666,stroke-width:1px,color:#333;
+
+    subgraph "🔴 ANTES: Desorganización y Manualidad"
+        direction LR
+        E1[Archivos Excel\ny Notas Físicas]:::antes --> M1[Consolidación\nManual]:::antes
+        M1 --> R1[Reportes Lentos\ny Propensos a Errores]:::antes
+        R1 --> D1[Falta de Visibilidad\nde Rentabilidad]:::antes
+    end
+
+    subgraph "🟢 DESPUÉS: Pipeline de Datos Moderno (Arquitectura Medallón)"
+        direction TB
+        
+        subgraph "1. Ingesta (main_pipeline.py)"
+            Src[(Generador de\nTransacciones)]:::db
+        end
+        
+        subgraph "2. Data Lakehouse"
+            direction LR
+            Bz[(🥉 Bronze\nDatos Crudos)]:::db
+            Sv[(🥈 Silver\nDatos Limpios)]:::db
+            Gd[(🥇 Gold\nDatamarts)]:::db
+            
+            Bz -->|Limpieza y\nFeature Engineering| Sv
+            Sv -->|Reglas de Negocio\ny Agrupaciones| Gd
+        end
+        
+        Src -->|Extracción| Bz
+        
+        subgraph "3. Consumo"
+            St[Dashboard en Streamlit\n(Tiempo Real)]:::stream
+            Gd -->|Insights| St
+        end
+    end
+
+    subgraph "☁️ Infraestructura Cloud & CI/CD"
+        direction LR
+        GH[GitHub Actions]:::process --> Nube[AWS Fargate / GCP Cloud Run / Azure ACI]:::aws
+        Nube -.-> |Orquestación\nAutomatizada| Src
+    end
+
+    %% Conexión visual para flujo
+    D1 ~~~ GH
