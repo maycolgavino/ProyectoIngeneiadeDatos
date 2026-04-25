@@ -13,3 +13,8 @@ textColor = "#FFFFFF"
 
 # Font to use (e.g., "sans serif", "serif", "monospace")
 font = "sans serif"
+
+[server]
+enableCORS = false
+enableXsrfProtection = false
+enableWebsocketCompression = false
