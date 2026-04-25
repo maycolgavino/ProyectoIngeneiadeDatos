@@ -14,6 +14,10 @@ RUN pip install --no-cache-dir streamlit plotly pandas
 # Copiar el código fuente y carpetas de configuración
 COPY . .
 
+# ¡CRUCIAL! Ejecutar el pipeline de datos para generar los archivos CSV/Parquet
+# dentro de la imagen, ya que .gitignore no permite subirlos a GitHub.
+RUN python main_pipeline.py
+
 # Exponer el puerto por defecto de Streamlit
 EXPOSE 8501
 
