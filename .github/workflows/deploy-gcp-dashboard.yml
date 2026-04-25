@@ -19,7 +19,7 @@ jobs:
       - name: Autenticación en Google Cloud
         uses: google-github-actions/auth@v2
         with:
-          credentials_json: '$\{{ secrets.GCP_CREDENTIALS }}'
+          credentials_json: '${{ secrets.GCP_CREDENTIALS }}'
 
       - name: Configurar SDK de Google Cloud
         uses: google-github-actions/setup-gcloud@v2
@@ -28,16 +28,16 @@ jobs:
         run: gcloud auth configure-docker
 
       - name: Construir imagen Docker
-        run: docker build -f ops/Dockerfile.dashboard -t $\{{ env.IMAGE_NAME }} .
+        run: docker build -f ops/Dockerfile.dashboard -t ${{ env.IMAGE_NAME }} .
 
       - name: Subir imagen a Google Container Registry
-        run: docker push $\{{ env.IMAGE_NAME }}
+        run: docker push ${{ env.IMAGE_NAME }}
 
       - name: Desplegar en Cloud Run
         run: |
-          gcloud run deploy $\{{ env.SERVICE_NAME }} \
-            --image $\{{ env.IMAGE_NAME }} \
-            --region $\{{ env.REGION }} \
+          gcloud run deploy ${{ env.SERVICE_NAME }} \
+            --image ${{ env.IMAGE_NAME }} \
+            --region ${{ env.REGION }} \
             --platform managed \
             --allow-unauthenticated \
             --port 8501 \
