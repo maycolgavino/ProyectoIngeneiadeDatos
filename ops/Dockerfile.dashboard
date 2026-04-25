@@ -1,0 +1,21 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Instalar dependencias base de Python y optimizaciones
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel
+
+# Instalar dependencias del dashboard
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+# Asegurar que streamlit y plotly estén instalados (por si no están en requirements.txt)
+RUN pip install --no-cache-dir streamlit plotly pandas
+
+# Copiar el código fuente y carpetas de configuración
+COPY . .
+
+# Exponer el puerto por defecto de Streamlit
+EXPOSE 8501
+
+# Comando para ejecutar el dashboard
+CMD ["streamlit", "run", "dashboard.py", "--server.port=8501", "--server.address=0.0.0.0"]

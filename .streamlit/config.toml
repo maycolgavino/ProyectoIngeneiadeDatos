@@ -1,0 +1,15 @@
+[theme]
+# Primary color for interactive elements (e.g., slider handles, buttons, active sidebar items)
+primaryColor = "#00D4FF"
+
+# Background color for the main content area
+backgroundColor = "#0E1117"
+
+# Background color for the sidebar and other secondary elements
+secondaryBackgroundColor = "#1E222A"
+
+# Color for text (e.g., regular text, titles, labels)
+textColor = "#FFFFFF"
+
+# Font to use (e.g., "sans serif", "serif", "monospace")
+font = "sans serif"

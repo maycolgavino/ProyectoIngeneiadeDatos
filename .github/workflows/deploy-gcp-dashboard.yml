@@ -1,0 +1,44 @@
+name: Deploy Dashboard to GCP (Cloud Run)
+
+on:
+  workflow_dispatch:
+
+env:
+  PROJECT_ID: maderera-data-project
+  REGION: us-central1
+  SERVICE_NAME: maderera-dashboard
+  IMAGE_NAME: gcr.io/maderera-data-project/maderera-dashboard
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v4
+
+      - name: Autenticación en Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: '$\{{ secrets.GCP_CREDENTIALS }}'
+
+      - name: Configurar SDK de Google Cloud
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configurar Docker para GCR
+        run: gcloud auth configure-docker
+
+      - name: Construir imagen Docker
+        run: docker build -f ops/Dockerfile.dashboard -t $\{{ env.IMAGE_NAME }} .
+
+      - name: Subir imagen a Google Container Registry
+        run: docker push $\{{ env.IMAGE_NAME }}
+
+      - name: Desplegar en Cloud Run
+        run: |
+          gcloud run deploy $\{{ env.SERVICE_NAME }} \
+            --image $\{{ env.IMAGE_NAME }} \
+            --region $\{{ env.REGION }} \
+            --platform managed \
+            --allow-unauthenticated \
+            --port 8501 \
+            --memory 1Gi
