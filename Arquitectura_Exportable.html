@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Arquitectura Maderera - Antes vs Después</title>
+    <title>Arquitectura Maderera Manantial - Antes vs Después</title>
     <script type="module">
         import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
         mermaid.initialize({ 
@@ -57,7 +57,7 @@
     </div>
     
     <div class="container">
-        <h1>Evolución de Arquitectura de Datos - Maderera Perú</h1>
+        <h1>Evolución de Arquitectura de Datos - Maderera Manantial</h1>
         <div class="mermaid">
 flowchart TD
     %% Estilos
@@ -68,42 +68,42 @@ flowchart TD
     classDef stream fill:#ff4b4b,color:white,stroke:#cc0000,stroke-width:1px;
     classDef process fill:#f9f9f9,stroke:#666,stroke-width:1px,color:#333;
 
-    subgraph "🔴 ESTADO ANTERIOR: Procesos Manuales y Desorganización"
+    subgraph ANTES ["🔴 ESTADO ANTERIOR: Procesos Manuales y Desorganización"]
         direction LR
-        E1[Archivos Excel\ny Notas Físicas]:::antes --> M1[Consolidación\nManual]:::antes
-        M1 --> R1[Reportes Estáticos\nLentos y Propensos a Errores]:::antes
-        R1 --> D1[Toma de Decisiones\nReactiva y sin Visibilidad]:::antes
+        E1["Archivos Excel<br>y Notas Físicas"]:::antes --> M1["Consolidación<br>Manual"]:::antes
+        M1 --> R1["Reportes Estáticos<br>Lentos y Propensos a Errores"]:::antes
+        R1 --> D1["Toma de Decisiones<br>Reactiva y sin Visibilidad"]:::antes
     end
 
-    subgraph "🟢 ESTADO ACTUAL: Arquitectura Medallón End-to-End Cloud"
+    subgraph DESPUES ["🟢 ESTADO ACTUAL: Arquitectura Medallón End-to-End Cloud"]
         direction TB
         
-        subgraph "1. Extracción (main_pipeline.py)"
-            Src[(Generador de\nTransacciones)]:::db
+        subgraph EXTRACCION ["1. Extracción (main_pipeline.py)"]
+            Src[("Generador de<br>Transacciones")]:::db
         end
         
-        subgraph "2. Procesamiento de Datos"
+        subgraph PROCESAMIENTO ["2. Procesamiento de Datos"]
             direction LR
-            Bz[(🥉 Capa Bronze\nDatos Crudos)]:::db
-            Sv[(🥈 Capa Silver\nLimpios y Enriquecidos)]:::db
-            Gd[(🥇 Capa Gold\nDatamarts)]:::db
+            Bz[("🥉 Capa Bronze<br>Datos Crudos")]:::db
+            Sv[("🥈 Capa Silver<br>Limpios y Enriquecidos")]:::db
+            Gd[("🥇 Capa Gold<br>Datamarts")]:::db
             
-            Bz -->|Limpieza y Feature\nEngineering Orientado a Objetos| Sv
-            Sv -->|Reglas de Negocio\ny Agrupaciones Analíticas| Gd
+            Bz -->|"Limpieza y Feature<br>Engineering Orientado a Objetos"| Sv
+            Sv -->|"Reglas de Negocio<br>y Agrupaciones Analíticas"| Gd
         end
         
-        Src -->|Ingesta Automatizada| Bz
+        Src -->|"Ingesta Automatizada"| Bz
         
-        subgraph "3. Consumo y Visualización"
-            St[Dashboard interactivo en Streamlit\n(Rentabilidad y Promociones)]:::stream
-            Gd -->|Insights Estratégicos| St
+        subgraph CONSUMO ["3. Consumo y Visualización"]
+            St["Dashboard interactivo en Streamlit<br>(Rentabilidad y Promociones)"]:::stream
+            Gd -->|"Insights Estratégicos"| St
         end
     end
 
-    subgraph "☁️ Infraestructura CI/CD y Nube"
+    subgraph NUBE ["☁️ Infraestructura CI/CD y Nube"]
         direction LR
-        GH[GitHub Actions\nCI/CD Pipeline]:::process --> Nube[AWS ECS Fargate / GCP Cloud Run / Azure ACI]:::aws
-        Nube -.-> |Ejecución de\nContenedor Docker| Src
+        GH["GitHub Actions<br>CI/CD Pipeline"]:::process --> NUBE_SRV["AWS ECS Fargate / GCP Cloud Run / Azure ACI"]:::aws
+        NUBE_SRV -.-> |"Ejecución de<br>Contenedor Docker"| Src
     end
 
     %% Separador visual
