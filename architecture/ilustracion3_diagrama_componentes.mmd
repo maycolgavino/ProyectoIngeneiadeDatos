@@ -1,0 +1,35 @@
+graph TB
+    subgraph "Pipeline Execution"
+        MAIN[main_pipeline.py]
+        BRN[generador_bronze.py]
+        SIL[procesador_silver.py]
+        GLD[procesador_gold.py]
+    end
+    
+    subgraph "Capa Data Storage"
+        DIR_B[data/bronze/ <br/> CSV Files]
+        DIR_S[data/silver/ <br/> Parquet Files]
+        DIR_G[data/gold/ <br/> Datamarts]
+    end
+    
+    subgraph "Clases Transformadoras"
+        S_T[SilverTransformer]
+        G_T[GoldTransformer]
+    end
+    
+    MAIN --> BRN
+    MAIN --> SIL
+    MAIN --> GLD
+    
+    BRN --> DIR_B
+    DIR_B --> SIL
+    SIL --> S_T
+    S_T --> DIR_S
+    DIR_S --> GLD
+    GLD --> G_T
+    G_T --> DIR_G
+    
+    style MAIN fill:#4CAF50
+    style DIR_B fill:#FF9800
+    style DIR_S fill:#2196F3
+    style DIR_G fill:#FFD700

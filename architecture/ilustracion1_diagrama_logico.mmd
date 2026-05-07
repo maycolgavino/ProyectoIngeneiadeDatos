@@ -1,0 +1,17 @@
+graph LR
+    A[Sistemas Transaccionales<br/>ERP Maderera] --> B[Extracción Raw]
+    B --> C[Bronze Layer<br/>Raw Data CSV]
+    
+    C --> D[SilverTransformer<br/>Limpieza y Joins]
+    D --> E[Silver Layer<br/>Curated Parquet]
+    
+    E --> F[GoldTransformer<br/>Agregaciones BI]
+    F --> G[Gold Layer<br/>Datamarts y Cubos]
+    
+    G --> H[Dashboard Streamlit / PowerBI]
+    
+    style A fill:#e1f5ff
+    style C fill:#fff4e6
+    style E fill:#e8f5e9
+    style G fill:#ffd700
+    style H fill:#e3f2fd

@@ -1,0 +1,43 @@
+graph TB
+    subgraph "Ingestion Layer"
+        ERP[Sistemas Transaccionales<br/>ERP Maderera]
+    end
+    
+    subgraph "Bronze Layer - Raw Zone"
+        B1[Clientes - CSV]
+        B2[Maderas - CSV]
+        B3[Ventas - CSV]
+    end
+    
+    subgraph "Silver Layer - Curated Zone"
+        S1[dim_clientes.parquet]
+        S2[dim_maderas.parquet]
+        S3[fact_ventas_unificadas.parquet]
+    end
+    
+    subgraph "Gold Layer - Serving Zone"
+        G1[Datamart Rentabilidad<br/>rentabilidad.parquet]
+        G2[Datamart Promociones<br/>estrategia_promociones.parquet]
+    end
+    
+    ERP --> B1
+    ERP --> B2
+    ERP --> B3
+    B1 --> S1
+    B2 --> S2
+    B3 --> S3
+    S1 --> G1
+    S2 --> G1
+    S3 --> G1
+    S2 --> G2
+    S3 --> G2
+    
+    style ERP fill:#4CAF50
+    style B1 fill:#FF9800
+    style B2 fill:#FF9800
+    style B3 fill:#FF9800
+    style S1 fill:#2196F3
+    style S2 fill:#2196F3
+    style S3 fill:#2196F3
+    style G1 fill:#FFD700
+    style G2 fill:#FFD700
